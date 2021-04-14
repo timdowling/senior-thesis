@@ -1,0 +1,401 @@
+---
+title: "joining_new"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+setwd("~/Desktop/DA Seminar/Resources/joining_scripts")
+
+election <- read.csv("countypres_2000-2016.csv")
+
+net_dev <- read.csv("net_development.csv")
+zonal_2001<- read.csv("zonal_2001_cleaned.csv")
+zonal_2004<- read.csv("zonal_2004_cleaned.csv")
+zonal_2008<- read.csv("zonal_2008_cleaned.csv")
+zonal_2013<- read.csv("zonal_2013_cleaned.csv")
+zonal_2016<- read.csv("zonal_2016_cleaned.csv")
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+```{r}
+zonal_2001 <- zonal_2001 %>%
+  rename("pct_developed" = pct_developed_2001)
+
+zonal_2001 <- zonal_2001 %>%
+  rename("pct_agri" = pct_agri_2001)
+
+zonal_2001 <- zonal_2001 %>%
+  rename("pct_suburban" = pct_suburban_2001)
+
+zonal_2001 <- zonal_2001 %>%
+  rename("pct_forest" = pct_forest_2001)
+
+zonal_2001 <- zonal_2001 %>%
+  rename("pct_undeveloped" = pct_undeveloped_2001)
+```
+
+```{r}
+zonal_2004 <- zonal_2004 %>%
+  rename("pct_developed" = pct_developed_2004)
+
+zonal_2004 <- zonal_2004 %>%
+  rename("pct_agri" = pct_agri_2004)
+
+zonal_2004 <- zonal_2004 %>%
+  rename("pct_suburban" = pct_suburban_2004)
+
+zonal_2004 <- zonal_2004 %>%
+  rename("pct_forest" = pct_forest_2004)
+
+zonal_2004 <- zonal_2004 %>%
+  rename("pct_undeveloped" = pct_undeveloped_2004)
+```
+
+```{r}
+zonal_2008 <- zonal_2008 %>%
+  rename("pct_developed" = pct_developed_2008)
+
+zonal_2008 <- zonal_2008 %>%
+  rename("pct_agri" = pct_agri_2008)
+
+zonal_2008 <- zonal_2008 %>%
+  rename("pct_suburban" = pct_suburban_2008)
+
+zonal_2008 <- zonal_2008 %>%
+  rename("pct_forest" = pct_forest_2008)
+
+zonal_2008 <- zonal_2008 %>%
+  rename("pct_undeveloped" = pct_undeveloped_2008)
+```
+
+```{r}
+zonal_2013 <- zonal_2013 %>%
+  rename("pct_developed" = pct_developed_2013)
+
+zonal_2013 <- zonal_2013 %>%
+  rename("pct_agri" = pct_agri_2013)
+
+zonal_2013 <- zonal_2013 %>%
+  rename("pct_suburban" = pct_suburban_2013)
+
+zonal_2013 <- zonal_2013 %>%
+  rename("pct_forest" = pct_forest_2013)
+
+zonal_2013 <- zonal_2013 %>%
+  rename("pct_undeveloped" = pct_undeveloped_2013)
+```
+
+```{r}
+zonal_2016 <- zonal_2016 %>%
+  rename("pct_developed" = pct_developed_2016)
+
+zonal_2016 <- zonal_2016 %>%
+  rename("pct_agri" = pct_agri_2016)
+
+zonal_2016 <- zonal_2016 %>%
+  rename("pct_suburban" = pct_suburban_2016)
+
+zonal_2016 <- zonal_2016 %>%
+  rename("pct_forest" = pct_forest_2016)
+
+zonal_2016 <- zonal_2016 %>%
+  rename("pct_undeveloped" = pct_undeveloped_2016)
+```
+
+
+
+
+
+```{r}
+zonal_joined <- bind_rows(zonal_2001,zonal_2004,zonal_2008,zonal_2013,zonal_2016)
+```
+
+```{r}
+
+#total development during that period
+zonal_joined <- zonal_joined %>%
+  group_by(combined_FIPS) %>%
+  mutate('total_dev' = (max(pct_developed)-min(pct_developed)))
+  
+```
+
+```{r}
+zonal_joined <- zonal_joined %>%
+  group_by(combined_FIPS) %>%
+  mutate('avg_dev_year' = (total_dev/16))
+```
+
+
+```{r}
+#save to csv
+write.csv(zonal_joined,'county_land_cover_2001-2016.csv')
+```
+
+
+#===============================
+
+
+
+
+
+
+```{r}
+write.csv(zonal_joined,'county_land_cover_2001-2016.csv')
+```
+
+#===================
+
+#get percent votes for each party for each year
+
+```{r}
+election <- election %>%
+  rename(combined_FIPS = FIPS)
+```
+
+```{r}
+election <- election %>%
+  rename(election_year = year)
+```
+
+
+```{r}
+e1 <- subset(election, party == 'democrat')
+```
+
+```{r}
+e2 <- e1 %>%
+  group_by(combined_FIPS, election_year) %>%
+  mutate(percent_vote_dem = candidatevotes/totalvotes)
+  
+```
+
+
+```{r}
+e3 <- subset(election, party == 'republican')
+```
+
+
+```{r}
+e4 <- e3 %>%
+  group_by(combined_FIPS, election_year) %>%
+  mutate(percent_vote_rep = candidatevotes/totalvotes)
+  
+```
+
+```{r}
+pct_elect <- left_join(e4, e2, by = c('combined_FIPS','election_year') )
+```
+
+```{r}
+pct_elect <- pct_elect %>%
+  select(percent_vote_dem,percent_vote_rep, combined_FIPS, election_year)
+```
+
+```{r}
+geo_elections_1 <- left_join(pct_elect, zonal_joined, by = c('combined_FIPS','election_year') )
+```
+
+```{r}
+geo_elections_1 <- geo_elections_1 %>% drop_na()
+```
+
+
+
+```{r}
+
+geo_elections_1$election_year <- as.numeric(as.character(geo_elections_1$election_year))
+
+```
+
+
+
+
+
+```{r}
+#dem average change
+geo_elections_1 <- geo_elections_1 %>%
+  group_by(combined_FIPS) %>%
+  mutate(dem_change = percent_vote_dem - lag(percent_vote_dem)) # Difference in route between years
+
+  
+```
+
+
+```{r}
+geo_elections_1 <- geo_elections_1 %>%
+  group_by(combined_FIPS) %>%
+  mutate(avg_dem_change = mean(dem_change, na.rm = TRUE )) # Difference in route between years
+
+```
+
+
+
+```{r}
+#rep average change
+geo_elections_1 <- geo_elections_1 %>%
+  group_by(combined_FIPS) %>%
+  mutate(rep_change = percent_vote_rep - lag(percent_vote_rep)) # Difference in route between years
+
+  
+```
+
+
+
+
+```{r}
+geo_elections_1 <- geo_elections_1 %>%
+  group_by(combined_FIPS) %>%
+  mutate(avg_rep_change = mean(rep_change, na.rm = TRUE )) # Difference in route between years
+
+```
+
+
+
+```{r}
+#winner
+geo_elections_1 <- geo_elections_1 %>%
+  group_by(combined_FIPS) %>%
+  mutate(pct_avg_dem_pres_change = mean(c(NA, diff(percent_vote_dem)), na.rm = TRUE)) #x100?
+```
+
+
+
+
+```{r}
+write.csv(geo_elections_1,'geo_election.csv')
+```
+
+#=====================
+#average for county, add senate and gov races
+
+
+
+
+```{r}
+geo_elections_1 <- geo_elections_1 %>%
+  select(-dem_change, -rep_change)
+```
+
+```{r}
+geo_test <- geo_elections_1 %>%
+  select(combined_FIPS, NAMELSAD, total_dev, avg_dem_change,avg_rep_change, pct_avg_dem_pres_change)
+```
+
+```{r}
+geo_averages <- geo_test %>%
+  distinct()
+```
+
+```{r}
+geo_averages <- left_join(geo_averages,net_dev, by = "combined_FIPS")
+```
+
+```{r}
+geo_averages <- geo_averages %>%
+  select(-X)
+```
+
+
+#add gov and sen
+
+```{r}
+sen_gov <- read_csv("gov_sen_elections.csv")
+```
+
+```{r}
+sen_gov <- sen_gov %>%
+  rename(combined_FIPS = county_fips)
+```
+
+
+```{r}
+geo_averages <- left_join(geo_averages, sen_gov, by = "combined_FIPS")
+```
+
+
+```{r}
+write.csv(geo_averages,'2000-2016_averages.csv')
+```
+
+
+
+#=============================
+#Med/Large County Council 
+
+```{r}
+county_council <- read.csv('county_council.csv')
+```
+
+```{r}
+council_geo <- left_join(county_council, geo_test, by = "combined_FIPS" )
+```
+
+```{r}
+council_geo <- na.omit(council_geo)
+```
+
+```{r}
+write_csv(council_geo, "council_geo.csv")
+```
+
+
+
+
+
+
+
+
+#=======
+#standard dv of development
+
+
+
+```{r}
+mean(geo_test$avg_dem_change)
+```
+
+```{r}
+geo_test <- geo_test %>%
+  group_by() %>%
+  mutate(dem_vote_deviation = avg_dem_change - (-0.02083488) )
+```
+
+```{r}
+mean(geo_test$net_dev)
+```
+```{r}
+mean(geo_test$net_dev)
+```
+
+
+
+```{r}
+geo_test <- geo_test %>%
+  group_by() %>%
+  mutate(dev_deviation = net_dev - (0.005783011) )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,419 @@
+---
+title: "county_level"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(tidycensus)
+library(usmap)
+```
+
+#======
+#Senate
+
+```{r}
+senate <- read.csv('county_senate_elections.csv')
+```
+
+```{r}
+data(fips_codes)
+```
+
+
+
+
+
+
+```{r}
+fips_codes$county <- str_remove(fips_codes$county, " County")
+fips_codes$county <- str_remove(fips_codes$county, " Parish")
+
+```
+
+
+
+```{r}
+fips_codes$county <- gsub("'","",fips_codes$county)
+```
+
+
+```{r}
+fips_codes$county <- tolower(fips_codes$county)
+```
+
+```{r}
+fips_codes$county <- str_remove(fips_codes$county, " parish")
+```
+
+
+```{r}
+senate$County <- tolower(senate$County)
+```
+
+
+```{r}
+senate <- senate %>%
+  rename(state = State)
+```
+
+```{r}
+senate <- senate %>%
+  rename(county = County)
+```
+
+```{r}
+senate$state <- as.character(as.factor(senate$state))
+fips_codes$state <- as.character(as.factor(fips_codes$state))
+```
+
+
+```{r}
+senate1 <- left_join(senate, fips_codes, by = c('state','county'))
+```
+
+```{r}
+senate1$county_fips <- paste0(senate1$state_code,senate1$county_code)
+```
+
+```{r}
+senate1 <- senate1[senate1$Year >=1998,]
+senate1 <- senate1[senate1$state != "AK",]
+```
+
+
+
+
+#manually add messy fips
+
+
+```{r}
+
+senate1$county_fips[senate1$county == "alexandria"]=51510
+senate1$county_fips[senate1$county == "bristol"]=51520
+
+senate1$county_fips[senate1$county == "buena vista"]=51530
+#rename that iowa one
+senate1$county_fips[senate1$county == "buena vista" & senate1$state == "IA"]=19021
+senate1$county_fips[senate1$county == "charlottesville"]=51540
+senate1$county_fips[senate1$county == "chesapeake"]=51550
+senate1$county_fips[senate1$county == "colonial heights"]=51570
+senate1$county_fips[senate1$county == "covington"& senate1$state == "VA"]=51580
+senate1$county_fips[senate1$county == "danville"& senate1$state == "VA"]=51590
+senate1$county_fips[senate1$county == "emporia"& senate1$state == "VA"]=51595
+senate1$county_fips[senate1$county == "falls church"& senate1$state == "VA"]=51610
+senate1$county_fips[senate1$county == "fredericksburg"& senate1$state == "VA"]=51630
+senate1$county_fips[senate1$county == "galax"& senate1$state == "VA"]=51640
+senate1$county_fips[senate1$county == "hampton"& senate1$state == "VA"]=51650
+senate1$county_fips[senate1$county == "harrisonburg"& senate1$state == "VA"]=51660
+senate1$county_fips[senate1$county == "hopewell"& senate1$state == "VA"]=51670
+senate1$county_fips[senate1$county == "hopewell"& senate1$state == "VA"]=51678
+senate1$county_fips[senate1$county == "lynchburg"& senate1$state == "VA"]=51680
+senate1$county_fips[senate1$county == "manassas"& senate1$state == "VA"]=51683
+senate1$county_fips[senate1$county == "manassas park"& senate1$state == "VA"]=51685
+senate1$county_fips[senate1$county == "martinsville"& senate1$state == "VA"]=51690
+senate1$county_fips[senate1$county == "newport news"& senate1$state == "VA"]=51700
+senate1$county_fips[senate1$county == "norfolk"& senate1$state == "VA"]=51710
+senate1$county_fips[senate1$county == "norton"& senate1$state == "VA"]=51720
+senate1$county_fips[senate1$county == "petersburg"& senate1$state == "VA"]=51730
+senate1$county_fips[senate1$county == "portsmouth"& senate1$state == "VA"]=51740
+senate1$county_fips[senate1$county == "poquoson"& senate1$state == "VA"]=51735
+senate1$county_fips[senate1$county == "radford"& senate1$state == "VA"]=51750
+senate1$county_fips[senate1$county == "salem"& senate1$state == "VA"]=51775
+senate1$county_fips[senate1$county == "lexington"& senate1$state == "VA"]=51678
+senate1$county_fips[senate1$county == "staunton"& senate1$state == "VA"]=51790
+senate1$county_fips[senate1$county == "suffolk"& senate1$state == "VA"]=51800
+senate1$county_fips[senate1$county == "virginia beach"& senate1$state == "VA"]=51810
+senate1$county_fips[senate1$county == "waynesboro"& senate1$state == "VA"]=51820
+senate1$county_fips[senate1$county == "williamsburg"& senate1$state == "VA"]=51830
+senate1$county_fips[senate1$county == "winchester"& senate1$state == "VA"]=51840
+
+#other random counties
+senate1$county_fips[senate1$county == "o'brien"& senate1$state == "IA"]=19141
+senate1$county_fips[senate1$county == "la salle"& senate1$state == "IL"]=19141
+senate1$county_fips[senate1$county == "la porte"& senate1$state == "IN"]=18091
+senate1$county_fips[senate1$county == "la moure"& senate1$state == "ND"]=38045
+senate1$county_fips[senate1$county == "de witt"& senate1$state == "TX"]=48123
+senate1$county_fips[senate1$county == "de soto"& senate1$state == "MS"]=22031
+```
+
+```{r}
+senate1$county_fips<- as.numeric(as.character(senate1$county_fips))
+```
+
+```{r}
+senate1$county_fips<- as.character(as.double(senate1$county_fips))
+senate1$Year<- as.character(as.double(senate1$Year))
+```
+
+
+```{r}
+#winner
+senate1 <- senate1 %>%
+  group_by(county_fips) %>%
+  mutate(pct_avg_dem_sen_change = mean(c(NA, diff(Dem...)), na.rm = TRUE))
+```
+
+```{r}
+senate1 <- senate1 %>%
+  select(county_fips, pct_avg_dem_sen_change)
+```
+
+```{r}
+senate1 <- senate1 %>%
+  distinct()
+```
+
+#=======
+#gubernatorial
+
+
+```{r}
+gov <- read_csv('county_gubernatorial_elections.csv')
+```
+
+```{r}
+data(fips_codes)
+```
+
+
+
+
+
+
+```{r}
+fips_codes$county <- str_remove(fips_codes$county, " County")
+fips_codes$county <- str_remove(fips_codes$county, " Parish")
+
+```
+
+
+
+```{r}
+fips_codes$county <- gsub("'","",fips_codes$county)
+```
+
+
+```{r}
+fips_codes$county <- tolower(fips_codes$county)
+```
+
+```{r}
+fips_codes$county <- str_remove(fips_codes$county, " parish")
+```
+
+
+```{r}
+gov$County <- tolower(gov$County)
+```
+
+
+```{r}
+gov <- gov %>%
+  rename(state = State)
+```
+
+```{r}
+gov <- gov %>%
+  rename(county = County)
+```
+
+```{r}
+gov$state <- as.character(as.factor(gov$state))
+fips_codes$state <- as.character(as.factor(fips_codes$state))
+```
+
+
+```{r}
+gov1 <- left_join(gov, fips_codes, by = c('state','county'))
+```
+
+```{r}
+gov1$county_fips <- paste0(gov1$state_code,gov1$county_code)
+```
+
+```{r}
+gov1 <- gov1[gov1$Year >=1998,]
+gov1 <- gov1[gov1$state != "AK",]
+```
+
+
+
+
+#pain
+
+
+
+
+```{r}
+gov1$county_fips[gov1$county == "alexandria"]=51510
+gov1$county_fips[gov1$county == "bristol"]=51520
+
+gov1$county_fips[gov1$county == "buena vista"]=51530
+#rename that iowa one
+gov1$county_fips[gov1$county == "buena vista" & gov1$state == "IA"]=19021
+gov1$county_fips[gov1$county == "charlottesville"]=51540
+gov1$county_fips[gov1$county == "chesapeake"]=51550
+gov1$county_fips[gov1$county == "colonial heights"]=51570
+gov1$county_fips[gov1$county == "covington"& gov1$state == "VA"]=51580
+gov1$county_fips[gov1$county == "danville"& gov1$state == "VA"]=51590
+gov1$county_fips[gov1$county == "emporia"& gov1$state == "VA"]=51595
+gov1$county_fips[gov1$county == "falls church"& gov1$state == "VA"]=51610
+gov1$county_fips[gov1$county == "fredericksburg"& gov1$state == "VA"]=51630
+gov1$county_fips[gov1$county == "galax"& gov1$state == "VA"]=51640
+gov1$county_fips[gov1$county == "hampton"& gov1$state == "VA"]=51650
+gov1$county_fips[gov1$county == "harrisonburg"& gov1$state == "VA"]=51660
+gov1$county_fips[gov1$county == "hopewell"& gov1$state == "VA"]=51670
+gov1$county_fips[gov1$county == "hopewell"& gov1$state == "VA"]=51678
+gov1$county_fips[gov1$county == "lynchburg"& gov1$state == "VA"]=51680
+gov1$county_fips[gov1$county == "manassas"& gov1$state == "VA"]=51683
+gov1$county_fips[gov1$county == "manassas park"& gov1$state == "VA"]=51685
+gov1$county_fips[gov1$county == "martinsville"& gov1$state == "VA"]=51690
+gov1$county_fips[gov1$county == "newport news"& gov1$state == "VA"]=51700
+gov1$county_fips[gov1$county == "norfolk"& gov1$state == "VA"]=51710
+gov1$county_fips[gov1$county == "norton"& gov1$state == "VA"]=51720
+gov1$county_fips[gov1$county == "petersburg"& gov1$state == "VA"]=51730
+gov1$county_fips[gov1$county == "portsmouth"& gov1$state == "VA"]=51740
+gov1$county_fips[gov1$county == "poquoson"& gov1$state == "VA"]=51735
+gov1$county_fips[gov1$county == "radford"& gov1$state == "VA"]=51750
+gov1$county_fips[gov1$county == "salem"& gov1$state == "VA"]=51775
+gov1$county_fips[gov1$county == "lexington"& gov1$state == "VA"]=51678
+gov1$county_fips[gov1$county == "staunton"& gov1$state == "VA"]=51790
+gov1$county_fips[gov1$county == "suffolk"& gov1$state == "VA"]=51800
+gov1$county_fips[gov1$county == "virginia beach"& gov1$state == "VA"]=51810
+gov1$county_fips[gov1$county == "waynesboro"& gov1$state == "VA"]=51820
+gov1$county_fips[gov1$county == "williamsburg"& gov1$state == "VA"]=51830
+gov1$county_fips[gov1$county == "winchester"& gov1$state == "VA"]=51840
+
+#other random counties
+gov1$county_fips[gov1$county == "o'brien"& gov1$state == "IA"]=19141
+gov1$county_fips[gov1$county == "la salle"& gov1$state == "IL"]=19141
+gov1$county_fips[gov1$county == "la porte"& gov1$state == "IN"]=18091
+gov1$county_fips[gov1$county == "la moure"& gov1$state == "ND"]=38045
+gov1$county_fips[gov1$county == "de witt"& gov1$state == "TX"]=48123
+gov1$county_fips[gov1$county == "de soto"& gov1$state == "MS"]=22031
+```
+
+```{r}
+gov1$county_fips<- as.numeric(as.character(gov1$county_fips))
+```
+
+```{r}
+gov1$county_fips<- as.character(as.double(gov1$county_fips))
+gov1$Year<- as.character(as.double(gov1$Year))
+```
+
+
+```{r}
+#winner
+gov1 <- gov1 %>%
+  group_by(county_fips) %>%
+  mutate(pct_avg_dem_gov_change = mean(c(NA, diff(`Dem. %`)), na.rm = TRUE))
+```
+
+
+```{r}
+gov1 <- gov1 %>%
+  select(county_fips, pct_avg_dem_gov_change)
+```
+
+```{r}
+gov1 <- gov1 %>%
+  distinct()
+```
+
+#=======
+
+```{r}
+gov_sen_elections <- left_join(gov1,senate1, by = "county_fips")
+```
+
+```{r}
+write_csv(gov_sen_elections, "gov_sen_elections.csv")
+```
+
+
+
+
+
+#=====
+#County Politics
+
+
+```{r}
+all_year_counties1 <- read.csv("county_elections.csv")
+all_year_counties <- read.csv("councilcomp_export.csv")
+```
+
+```{r}
+council_2014 <- subset(all_year_counties, year == 2014)
+```
+
+```{r}
+council_2000 <- subset(all_year_counties, year == 2000)
+```
+
+```{r}
+council_2000 <- council_2000 %>%
+  rename(dem_council_pct_2000 = demshare_council)
+```
+
+```{r}
+council_2014 <- council_2014 %>%
+  rename(dem_council_pct_2014 = demshare_council)
+```
+
+
+```{r}
+#filter
+council_2000 <- council_2000 %>%
+  select(fips, dem_council_pct_2000)
+
+```
+
+```{r}
+#filter
+council_2014 <- council_2014 %>%
+  select(fips, dem_council_pct_2014)
+
+```
+
+
+```{r}
+#join 
+county_council <- left_join(council_2000,council_2014, by = "fips")
+```
+
+```{r}
+county_council <- county_council %>%
+  select(fips, dem_council_pct_2000, dem_council_pct_2014)
+```
+
+```{r}
+county_council <- county_council %>%
+  mutate(pct_council_dem_change = dem_council_pct_2014 - dem_council_pct_2000)
+```
+
+```{r}
+county_council <- county_council %>%
+  select(fips, pct_council_dem_change)
+```
+
+```{r}
+county_council <- county_council %>%
+  rename(combined_FIPS = fips)
+```
+
+
+```{r}
+write.csv(county_council, 'county_council.csv')
+```
+
+
+
+

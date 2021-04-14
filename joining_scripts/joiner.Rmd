@@ -1,0 +1,214 @@
+---
+title: "joiner"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+setwd("~/Desktop/DA Seminar/Resources/joining_scripts")
+
+election <- read.csv("countypres_2000-2016.csv")
+election_2016 <- read.csv('2016_US_County_Level_Presidential_Results.csv')
+land_cover_2013 <- read.csv("land_cover_2013.csv")
+land_cover_2016<- read.csv("land_cover_2016.csv")
+land_cover_2008<- read.csv("land_cover_2008.csv")
+land_cover_2004<- read.csv("land_cover_2004.csv")
+zonal_2016<- read.csv("zonal_2016_cleaned.csv")
+```
+
+
+
+
+
+
+```{r}
+election <- election %>%
+  group_by(party) %>%
+  mutate(percent_vote = (candidatevotes/totalvotes))
+```
+
+
+
+```{r}
+combined <- bind_rows(land_cover_2004, land_cover_2008)
+combined <- combined %>%
+  drop_na()
+```
+
+
+```{r}
+master_test <- merge(land_cover_2013, land_cover_2016 )
+master_test <- merge(master_test, land_cover_2008 )
+master_test <- merge(master_test, land_cover_2004 )
+
+```
+
+```{r}
+bungus <- master_test %>%
+  group_by(NAMELSAD)
+```
+
+```{r}
+P <- master_test %>% 
+  ggplot(aes(pct_sub_2004)) +
+  geom_freqpoly()
+P
+
+
+```
+
+```{r}
+p<-ggplot(master_test, aes(x=pct_sub_2004)) +
+  geom_freqpoly(alpha=0.5,fill="blue")
+
+p+geom_freqpoly(data=master_test, aes(pct_sub_2008),alpha= .5, fill = "purple")
+p+geom_freqpoly(data=master_test, aes(pct_sub_2013),alpha= .5, fill = "red")
+p+geom_freqpoly(data=master_test, aes(pct_sub_2016),alpha= .5, fill = "yellow")
+```
+
+
+#elecion cleaning
+#
+
+
+```{r}
+master_test <- master_test %>%
+  rename("county" = NAME)
+```
+
+
+
+
+```{r}
+bungus_chungus <- merge(election, master_test, by = 'county' )
+```
+
+```{r}
+pain <- bungus_chungus %>%
+  group_by(county) %>%
+```
+```{r}
+
+election_2016 <- election_2016 %>%
+  rename("combined_FIPS" = combined_fips)
+```
+
+
+```{r}
+eek <- merge(election_2016, land_cover_2016, by = 'FIPS' )
+```
+
+```{r}
+bungus <- eek %>% 
+  ggplot(aes(pct_sub_2016, per_dem, size = total_votes)) +
+  geom_point(color = "blue", alpha = .4)+
+  theme_minimal()+
+  scale_size_continuous(name = "Total Votes")+
+  theme(text=element_text(family="Avenir", size=11), axis.text.x = element_text(size = 10, vjust = 3))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_smooth(method = "lm")+
+  labs(title="County Land Cover and Democratic Vote Share in the 2016 Election", x="% Suburban Land", y = "% of Vote Democrat", caption = "n = 2372")
+bungus
+
+ggsave("early_viz.png")
+
+```
+
+```{r}
+model1 <- lm(data = eek, per_dem~pct_sub_2016)
+summary(model1)
+```
+
+
+```{r}
+
+library(ggridges)
+library(wesanderson)
+
+
+eek %>%
+  ggplot(aes(y= state_abbr, x = pct_sub_2016, fill = state_abbr))+
+  geom_density_ridges(quantile_lines = TRUE, quantiles = 2)+
+  #scale_fill_manual(values = wes_palette("Moonrise3"))+
+  theme_minimal()+
+  theme(legend.position="blank")+  
+  theme(text=element_text(family="Avenir", size=11), axis.text.x = element_text(size = 10, vjust = 3))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  labs(x="Average Number of Groups Involved In", y=" ", title = "Trends in Student Involvement by Income Group", caption = "n = 526")
+```
+
+```{r}
+#percent change in suburban land from 2001
+master_test <- master_test %>%
+  group_by(county) %>%
+  mutate(change = (pct_sub_2016-pct_sub_2004))
+```
+
+
+```{r}
+master_test %>%
+  ggplot(aes(change)) +
+  geom_histogram()
+```
+
+
+
+
+```{r}
+
+master_test <- master_test %>%
+  rename("county_name" = NAMELSAD)
+```
+
+
+```{r}
+test2 <- merge(master_test, eek, by = 'county_name' )
+```
+
+```{r}
+
+zonal_2016 <- zonal_2016 %>%
+  rename("FIPS" = combined_FIPS)
+```
+
+```{r}
+
+election_2016 <- election_2016 %>%
+  rename("FIPS" = combined_fips)
+```
+
+
+```{r}
+zonal_combined <- merge(zonal_2016, election_2016, by = 'FIPS' )
+```
+
+
+```{r}
+typeof(zonal_2016$FIPS)
+```
+```{r}
+chungus <- zonal_combined %>% 
+  ggplot(aes(pct_forest_2016, per_dem, size = total_votes)) +
+  geom_point(color = "blue", alpha = .4)+
+  theme_minimal()+
+  scale_size_continuous(name = "Total Votes")+
+  theme(text=element_text(family="Avenir", size=11), axis.text.x = element_text(size = 10, vjust = 3))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_smooth(method = "lm")+
+  labs(title="County Land Cover and Democratic Vote Share in the 2016 Election", x="% Suburban Land", y = "% of Vote Democrat", caption = "n = 2372")
+chungus
+
+```
+
+
+```{r}
+typeof(election_2016$FIPS)
+```

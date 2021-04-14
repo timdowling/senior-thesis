@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+setwd("~/Desktop/DA Seminar/Resources/joining_scripts")
+
+election <- read.csv("countypres_2000-2016.csv")
+zonal_2001<- read.csv("zonal_2001_cleaned.csv")
+zonal_2004<- read.csv("zonal_2004_cleaned.csv")
+zonal_2008<- read.csv("zonal_2008_cleaned.csv")
+zonal_2013<- read.csv("zonal_2013_cleaned.csv")
+zonal_2016<- read.csv("zonal_2016_cleaned.csv")
+```
+
+```{r}
+master_test <- merge(zonal_2001, zonal_2004, by = c('combined_FIPS'))
+
+```
+
+```{r}
+master_test <- master_test %>%
+  select(-election_year.x,-election_year.y)
+```
+
+```{r}
+master_test <- merge(master_test, zonal_2008,by = 'combined_FIPS')
+
+```
+
+
+```{r}
+master_test <- master_test %>%
+  select(-election_year,-NAMELSAD.x,-NAMELSAD.y)
+```
+
+```{r}
+master_test <- merge(master_test, zonal_2013,by = 'combined_FIPS' )
+```
+
+```{r}
+master_test <- master_test %>%
+  select(-election_year,-NAMELSAD.x,-NAMELSAD.y)
+```
+
+```{r}
+master_test <- merge(master_test, zonal_2016,by = 'combined_FIPS')
+```
+
+```{r}
+master_test <- master_test %>%
+  select(-election_year)
+
+```
+
+
+```{r}
+dev <- master_test %>%
+  group_by(combined_FIPS) %>%
+  mutate(net_dev = pct_developed_2016 - pct_developed_2001)
+```
+
+```{r}
+dev <- dev %>%
+  select(combined_FIPS,net_dev)
+```
+
+```{r}
+write.csv(dev,'net_development.csv')
+```
+
+
+
