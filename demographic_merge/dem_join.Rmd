@@ -1,0 +1,77 @@
+---
+title: "dem_merge"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("~/Desktop/DA Seminar/Resources/demographic_merge")
+
+geo_averages <- read.csv("2000-2016_averages.csv")
+all_geo<- read.csv("geo_election.csv")
+
+demographic <- read.csv('demographic_changes.csv')
+
+```
+
+
+```{r}
+counties_master <- left_join( geo_averages,demographic, by ='combined_FIPS')
+```
+
+
+```{r}
+dem <- lm(avg_dem_change~total_dev+pct_pop_change+pct_nonWhite_change+pct_white_change+pct_black_change+pct_asian_change, data = counties_master)
+summary(dem)
+
+#seems to pass control tests, even with demographics being a little imperfect
+```
+
+
+
+#==========
+
+```{r}
+library(censusapi)
+# Add key to .Renviron
+Sys.setenv(CENSUS_KEY= '81876a97d6ad5a691794f70f9f561fbd06b86947')
+# Reload .Renviron
+readRenviron("~/.Renviron")
+# Check to see that the expected key is output in your R console
+Sys.getenv("CENSUS_KEY")
+```
+```{r}
+apis <- listCensusApis()
+View(apis)
+```
+
+
+
+```{r}
+sahie_vars <- listCensusMetadata(
+    name = "2010/acs/acs5", 
+    type = "variables")
+sahie_vars
+```
+
+
+
+
+```{r}
+listCensusMetadata(
+    name = "2010/acs/acs5", 
+    type = "geography")
+```
+
+```{r}
+sahie_national <- getCensus(
+    name = "2010/acs/acs5",
+    vars = c("NAME", "IPRCAT", "IPR_DESC", "PCTUI_PT"), 
+    region = "county:*", 
+    time = 2018)
+sahie_national
+```
+
