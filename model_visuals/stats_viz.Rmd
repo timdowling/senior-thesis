@@ -1,0 +1,580 @@
+---
+title: "stats"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+setwd("~/Desktop/DA Seminar/Resources/model_visuals")
+
+master_data <- read.csv('geo_election.csv')
+master_averages <- read.csv('2000-2016_averages.csv')
+demographic <- read.csv("demographic_changes.csv")
+
+```
+
+```{r}
+library(maps)
+library(tidyverse)
+library(devtools)
+library(urbnmapr)
+library(scico)
+library(urbnthemes)
+```
+
+#National Map
+```{r}
+master_averages <- master_averages %>%
+  rename("county_fips" = combined_FIPS)
+```
+
+```{r}
+master_averages$county_fips <- as.character(as.numeric(master_averages$county_fips))
+
+```
+
+
+```{r}
+#fill in 0 in FIPS code for joining
+master_averages$county_fips <- sprintf("%05s", master_averages$county_fips)
+```
+
+
+
+```{r}
+geo_counties <- left_join(master_averages, counties, by = "county_fips") 
+```
+
+
+
+
+```{r}
+#remove alaska and hawaii
+state_subset <- states %>%
+  filter(!state_name %in% c("Alaska", "Hawaii"))
+```
+
+
+```{r}
+dev_map <- geo_counties %>%
+  ggplot(aes(long, lat, group = group, fill = net_dev)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_scico(palette = "lajolla", labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Percent of County Land Developed\nBetween 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dev_map
+
+ggsave("dev_map_national.png")
+```
+
+
+
+#pres vote
+```{r}
+dem_vote_map <- geo_counties %>%
+  ggplot(aes(long, lat, group = group, fill = pct_avg_dem_pres_change)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_gradient2(labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Average Change in Democrat Vote\nBetween 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dem_vote_map
+
+ggsave("vote_map_national.png")
+```
+#senate vote
+
+```{r}
+dem_vote_map_sen <- geo_counties %>%
+  ggplot(aes(long, lat, group = group, fill = pct_avg_dem_sen_change)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_gradient2()+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Average Change in Democrat Vote\nBetween 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dem_vote_map_sen
+
+#ggsave("vote_map_national.png")
+```
+
+#gov map
+
+```{r}
+dem_vote_map_gov <- geo_counties %>%
+  ggplot(aes(long, lat, group = group, fill = pct_avg_dem_gov_change)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_gradient2()+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Average Change in Democrat Vote Between 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change", title = "")
+dem_vote_map_gov
+
+#ggsave("vote_map_national.png")
+```
+
+
+#===========
+#National Model
+
+
+
+
+#just dev
+```{r}
+#model
+vote_model_change <- lm(avg_dem_change~net_dev ,master_averages)
+summary(vote_model_change)
+```
+
+
+```{r}
+vote_dev <- master_averages %>% 
+  ggplot(aes(net_dev, avg_dem_change)) +
+  geom_point(color = "blue", alpha = .4)+
+  theme_minimal()+
+  theme(text=element_text(family="Avenir", size=11), axis.text.x = element_text(size = 10, vjust = 3))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_smooth(method = "lm")+
+  labs(title="County Land Development and Changes in\nDemocratic Vote Share between 2000-2016", x="%of County Land Developed", y = "Average Democratic Vote Change", caption = "n = 3107")
+vote_dev
+
+ggsave("vote_dev_model_viz.png")
+
+```
+
+
+
+#demographic controls
+
+```{r}
+demographic <- demographic %>%
+  rename("county_fips" = combined_FIPS)
+```
+
+
+
+```{r}
+#fill in 0 in FIPS code for joining
+demographic$county_fips <- sprintf("%05s", demographic$county_fips)
+```
+
+
+```{r}
+counties_dem_dev <- left_join( master_averages, demographic, by ='county_fips')
+```
+
+```{r}
+dem <- lm(avg_dem_change~net_dev+pct_pop_change+pct_nonWhite_change+pct_white_change+pct_black_change+pct_asian_change, data = counties_dem_dev)
+summary(dem)
+
+#seems to pass control tests, even with demographics being a little imperfect
+```
+
+
+
+#========
+National senate
+
+```{r}
+#model
+vote_model_change <- lm(pct_avg_dem_sen_change~net_dev ,master_averages)
+summary(vote_model_change)
+```
+#national gov
+```{r}
+#model
+vote_model_change <- lm(pct_avg_dem_gov_change~net_dev ,master_averages)
+summary(vote_model_change)
+```
+
+#==========
+#Regions
+
+```{r}
+#South
+
+data_subset <- counties %>%
+  filter(state_name %in% c("Texas",'Georgia','North Carolina',"Louisiana", "Mississippi",'Alabama',"South Carolina","Florida"))
+state_subset <- states %>%
+  filter(state_name %in% c("Texas",'Georgia','North Carolina',"Louisiana", "Mississippi",'Alabama',"South Carolina","Florida"))
+```
+
+
+
+
+```{r}
+geo_counties_south <- left_join(master_averages, data_subset, by = "county_fips") 
+```
+
+
+
+```{r}
+dev_map_south <- geo_counties_south %>%
+  ggplot(aes(long, lat, group = group, fill = net_dev)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_scico(palette = "lajolla", labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Percent of County Land Developed\nBetween 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dev_map_south
+
+ggsave("dev_map_south.png")
+```
+
+```{r}
+dev_map_south <- geo_counties_south %>%
+  ggplot(aes(long, lat, group = group, fill = avg_dem_change)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_gradient2(labels = scales::percent)+
+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Average Democratic Vote Change 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dev_map_south
+
+ggsave("vote_map_south.png")
+```
+
+
+
+```{r}
+#Rustblt
+data_subset <- counties %>%
+  filter(state_name %in% c("Illinois",'Wisconsin','Michigan',"Indiana", "Ohio",'Pennsylvania'))
+state_subset <- states %>%
+  filter(state_name %in% c("Illinois",'Wisconsin','Michigan',"Indiana", "Ohio",'Pennsylvania'))
+```
+
+
+
+
+```{r}
+geo_counties_rust <- left_join(master_averages, data_subset, by = "county_fips") 
+```
+
+
+
+```{r}
+dev_map_rust <- geo_counties_rust %>%
+  ggplot(aes(long, lat, group = group, fill = net_dev)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_scico(palette = "lajolla", labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Percent of County Land Developed\nBetween 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dev_map_rust
+
+ggsave("dev_map_rustbelt.png")
+```
+
+```{r}
+vote_map_rust <- geo_counties_rust %>%
+  ggplot(aes(long, lat, group = group, fill = avg_dem_change)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_gradient2(labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Average Democratic Vote Change 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+vote_map_rust
+
+ggsave("vote_map_rustbelt.png")
+```
+
+
+```{r}
+#Appilacia
+data_subset <- counties %>%
+  filter(state_name %in% c("Pennsylvania",'West Virginia','Kentucky',"Tennessee", "Ohio"))
+state_subset <- states %>%
+  filter(state_name %in% c("Pennsylvania",'West Virginia','Kentucky',"Tennessee", "Ohio"))
+```
+
+
+
+
+```{r}
+geo_counties_app <- left_join(master_averages, data_subset, by = "county_fips") 
+```
+
+
+
+```{r}
+dev_map_app <- geo_counties_app %>%
+  ggplot(aes(long, lat, group = group, fill = net_dev)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_scico(palette = "lajolla", labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Percent of County Land Developed\nBetween 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+dev_map_app
+
+#ggsave("dev_map.png")
+```
+
+
+
+
+#=============
+
+#county politics test
+
+```{r}
+county_elect <- read.csv("council_geo.csv")
+```
+
+```{r}
+county_elect <- county_elect %>%
+  rename(county_fips = combined_FIPS)
+```
+
+```{r}
+county_elect$county_fips <- sprintf("%05s", county_elect$county_fips)
+
+```
+
+
+```{r}
+county_elect$county_fips <- as.character(as.numeric(county_elect$county_fips))
+```
+
+
+```{r}
+county_elect_geo <- left_join(county_elect,counties, by = "county_fips")
+```
+
+```{r}
+#remove alaska and hawaii
+state_subset <- states %>%
+  filter(!state_name %in% c("Alaska", "Hawaii"))
+```
+
+```{r}
+county_elect_geo %>%
+  ggplot(aes(long, lat, group = group, fill = pct_council_dem_change)) +
+  geom_polygon(color = NA) +
+  coord_map(projection = "albers", lat0 = 39, lat1 = 45) +
+  scale_fill_gradient2(labels = scales::percent)+
+  geom_polygon(data = state_subset, mapping = aes(long, lat, group = group),
+               fill = NA, color = "#000000") +
+  theme(line = element_blank(),
+        axis.title = element_blank(),
+        axis.text = element_blank(),
+        panel.background = element_blank())+
+  theme(legend.position = "top",
+        legend.spacing.x = unit(.5, "cm"),
+        legend.text = element_text(margin = margin(t = 0)))+
+  guides(fill = guide_colorbar(title = "Average Democratic Vote Change 2000-2016",
+                               label.position = "bottom",
+                               title.position = "top", title.vjust = .5,
+                               # draw border around the legend
+                               frame.colour = "black",
+                               barwidth = 15,
+                               barheight = 1)) +
+  labs(fill = "Percent Dem Vote Change")
+```
+
+```{r}
+bungus <- lm(pct_council_dem_change~net_dev, data = county_elect)
+summary(bungus)
+#less significant, but still ok??
+```
+
+#=========
+#interactive 
+
+```{r}
+library(leaflet)
+library(stringr)
+library(sf)
+library(tidycensus)
+```
+
+```{r}
+library(censusapi)
+# Add key to .Renviron
+Sys.setenv(CENSUS_KEY= '81876a97d6ad5a691794f70f9f561fbd06b86947')
+# Reload .Renviron
+readRenviron("~/.Renviron")
+# Check to see that the expected key is output in your R console
+Sys.getenv("CENSUS_KEY")
+```
+
+```{r}
+census_api_key('81876a97d6ad5a691794f70f9f561fbd06b86947')
+```
+
+
+```{r}
+ga_value <- get_acs(geography = "county", 
+                     variables = "B25077_001", 
+                     state = "GA",
+                     geometry = TRUE)
+```
+
+
+
+```{r}
+pal <- colorQuantile(palette = "viridis", domain = geo_counties$net_dev)
+
+geo_counties %>%
+    leaflet(width = "100%") %>%
+  
+    addProviderTiles(provider = "CartoDB.Positron") %>%
+    addPolygons(popup = ~ str_extract(NAME, "^([^,]*)"),
+                stroke = FALSE,
+                smoothFactor = 0,
+                fillOpacity = 0.7,
+                color = ~ pal(estimate)) %>%
+    addLegend("bottomright", 
+              pal = pal, 
+              values = ~ estimate,
+              title = "Population percentiles",
+              opacity = 1)
+```
+
+###
+#fixed effects
+
+```{r}
+fixed.dum <-lm(avg_dem_change ~ x1 + factor(country) - 1, data = geo)
+summary(fixed.dum)
+```
